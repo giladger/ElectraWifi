@@ -129,6 +129,8 @@ bool powerHandler(const HomieRange& range, const String& value) {
     return false;
   }
   ac.SendElectra(false);
+  ac.power_real = ac.power_setting;
+  powerNode.setProperty("state").send(ac.power_real ? "on": "off");
   return true;
 }
 
