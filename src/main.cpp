@@ -146,7 +146,7 @@ void setup() {
   ifeelTempNode.advertise("state").settable(ifeelTempHandler);
   powerNode.advertise("state").settable(powerHandler);
   
-  pinMode(POWER_PIN, INPUT);
+  pinMode(POWER_PIN, INPUT_PULLUP);
   pinMode(GREEN_LED_PIN, OUTPUT);
   Homie.setup();
 }
