@@ -10,6 +10,7 @@
 #define IRelectra_h
 
 #include <stdint.h>
+#include <IRrecv.h>
 
 enum power_t 
 {
@@ -52,6 +53,8 @@ enum ifeel_t
     IFEEL_ON = 1
 };
 
+uint64_t DecodeElectraIR(decode_results &ir_ticks);
+
 class IRelectra
 {
 public:
@@ -60,6 +63,7 @@ public:
     
     // Sends the specified configuration to a GPIO pin
     void SendElectra(bool notify);
+    void UpdateFromIR(uint64_t code);
 
     bool power_setting;
     bool power_real;

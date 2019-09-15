@@ -1,16 +1,15 @@
 /*
- * IRelectra
- * Version 0.8 
- * Copyrights 2014 Barak Weiss
- *
- * Many thanks to Chris from AnalysIR
+ * Based on IRelectra (https://github.com/barakwei/IRelectra) by Barak Weiss
  */
 
 #include "IRelectra.h"
 #include <stdint.h>
 #include <Arduino.h>
+#include <IRutils.h>
 
 #define UNIT 1000
+#define TICKS_TO_UNITS(x) round((float)(x) * kRawTick / UNIT)
+
 #define NUM_BITS 34
 
 IRelectra::IRelectra(uint8_t output_pin) : output_pin(output_pin)
@@ -124,7 +123,7 @@ void IRelectra::SendRaw(unsigned int *data, uint size) {
 //     1: One
 //     0: Zero
 uint64_t IRelectra::EncodeElectra(bool notify) {
-    uint64_t num = 0;
+    uint64_t code = 0;
     uint32_t send_temp;
     power_t power;
 
@@ -139,15 +138,104 @@ uint64_t IRelectra::EncodeElectra(bool notify) {
     } else {
         send_temp = temperature - 15;
     }
-    num |= (((uint64_t)power     & 1)  << 33);
-    num |= (((uint64_t)mode      & 7)  << 30);
-    num |= (((uint64_t)fan       & 3)  << 28);
-    num |= (((uint64_t)notify    & 1)  << 27);
-    num |= (((uint64_t)swing     & 1)  << 25);
-    num |= (((uint64_t)ifeel     & 1)  << 24);
-    num |= (((uint64_t)send_temp & 31) << 19);
-    num |= (((uint64_t)sleep     & 1)  << 18);
-    num |= 2;
+    code |= (((uint64_t)power     & 1)  << 33);
+    code |= (((uint64_t)mode      & 7)  << 30);
+    code |= (((uint64_t)fan       & 3)  << 28);
+    code |= (((uint64_t)notify    & 1)  << 27);
+    code |= (((uint64_t)swing     & 1)  << 25);
+    code |= (((uint64_t)ifeel     & 1)  << 24);
+    code |= (((uint64_t)send_temp & 31) << 19);
+    code |= (((uint64_t)sleep     & 1)  << 18);
+    code |= 2;
     
-    return num;
+    return code;
+}
+
+void IRelectra::UpdateFromIR(uint64_t code) {
+    uint32_t send_temp;
+    power_t power;
+    bool notify;
+
+    power = (power_t)((code >> 33) & 1);
+    mode = (ac_mode_t)((code >> 30) & 7);
+    fan = (fan_t)((code >> 28) & 3);
+    notify = (bool)((code >> 27) & 1);
+    swing = (swing_t)((code >> 25) & 1);
+    ifeel = (ifeel_t)((code >> 24) & 1);
+    send_temp = (ifeel_t)((code >> 19) & 31);
+    sleep = (sleep_t)((code >> 18) & 1);
+
+    if (power == POWER_TOGGLE) {
+        power_setting = !power_real;
+    } 
+
+    if (notify) {
+        ifeel_temperature = send_temp + 5;
+    } else {
+        temperature = send_temp + 15;
+    }
+}
+
+
+uint64_t manchester_to_bits(volatile uint16_t *data, uint8_t &i, uint8_t size, bool is_space) {
+    uint64_t result = 0;
+    while (i < size - 1) {
+        if (TICKS_TO_UNITS(data[i]) == 1) {
+            if (TICKS_TO_UNITS(data[i + 1]) > 0) {
+                result = result << 1 | (is_space ? 1 : 0);
+                if (TICKS_TO_UNITS(data[i + 1]) > 1) {
+                    data[i + 1] -= UNIT / kRawTick;
+                    is_space = !is_space;
+                    i += 1;
+                    continue;
+                }
+                i += 2;
+                continue;
+            }
+            return 0;
+        }
+        if (TICKS_TO_UNITS(data[i]) == 3) {  // the beginning to the next repetition
+            return result;
+        }
+        return 0;
+    }
+    if (TICKS_TO_UNITS(data[i]) == 4) { // the end of the last repetition
+        return result;
+    }
+
+    return 0;
+}
+
+uint64_t DecodeElectraIR(decode_results &ir_ticks) {
+    uint64_t results[3] = {0, 0, 0};
+    uint8_t result_index = 0;
+    uint8_t i = 0;
+
+    while (i < ir_ticks.rawlen - 1 && result_index < 3) {
+        if (TICKS_TO_UNITS(ir_ticks.rawbuf[i]) == 3) {
+            if (TICKS_TO_UNITS(ir_ticks.rawbuf[i + 1]) == 3) {
+                i += 2;
+                results[result_index] = manchester_to_bits(ir_ticks.rawbuf, i, ir_ticks.rawlen, false);
+                result_index++;
+                continue;
+            }
+            if (TICKS_TO_UNITS(ir_ticks.rawbuf[i + 1]) == 4) {
+                ir_ticks.rawbuf[i + 1] -= 3 * UNIT / kRawTick;
+                i += 1;
+                results[result_index] = manchester_to_bits(ir_ticks.rawbuf, i, ir_ticks.rawlen, true);
+                result_index++;
+                continue;
+            }
+        }
+        i++;
+    }
+    if (TICKS_TO_UNITS(ir_ticks.rawbuf[i]) == 4) {
+        if (results[0] == results[1] || results[0] == results[2]) {
+            return results[0];
+        }
+        if (results[1] == results[2]) {
+            return results[1];
+        }
+    }
+    return 0;
 }
