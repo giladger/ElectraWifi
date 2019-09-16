@@ -9,9 +9,13 @@ The original receiver itself is "dumb" and doesn't hold any state and all the in
 The receiver is connected to the main unit with an 8-pin mini din connector, with the following pins:
 
 1. 5V
+2. Heat LED
 3. IR signal
-4. Green power led (LOW for on)
+4. Green power LED (LOW for on)
+5. Timer LED
 6. Beep
+7. Button
+8. Cool LED
 
 So now all we need to do is throw out the old receiver and hook up an ESP8266 to the pins 1, 3, 4.
 
