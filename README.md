@@ -41,7 +41,7 @@ Once the code is installed on the esp, it will boot in configuration mode. Follo
 
 ## Usage
 After the esp is configured, it will subscribe to the following MQTT topics:
-- .../settings/json/set 
+- .../state/json/set 
   - This topic accepts a json in the following format (all fields are mandatory), updates the state and send it to the AC unit:   
   `{"power": "on|off", "mode": "cool|heat|fan|dry|auto", "fan": "low|med|high|auto", "temperature": 15..30, "ifeel": "on|off"}`
 - .../ifeel_temperature/state/set
