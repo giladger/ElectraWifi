@@ -49,16 +49,22 @@ void send_updates() {
     fan = "high";
   } 
   
-  if (ac.mode == MODE_COOL) {
-    mode = "cool";
-  } else if (ac.mode == MODE_HEAT) {
-    mode = "heat";
-  } else if (ac.mode == MODE_DRY) {
-    mode = "dry";
-  } else if (ac.mode == MODE_AUTO) {
-    mode = "auto";
-  }
   ac.power_real = ac.power_setting;
+
+  if (ac.power_real) {
+    if (ac.mode == MODE_COOL) {
+      mode = "cool";
+    } else if (ac.mode == MODE_HEAT) {
+      mode = "heat";
+    } else if (ac.mode == MODE_DRY) {
+      mode = "dry";
+    } else if (ac.mode == MODE_AUTO) {
+      mode = "auto";
+    }
+  }
+  else {
+    mode = "off";
+  }
   powerNode.setProperty("state").send(ac.power_real ? "on": "off");
   fanNode.setProperty("state").send(fan);
   modeNode.setProperty("state").send(mode);
@@ -96,10 +102,12 @@ void loopHandler() {
   }
 
   // Send updates
+  /*
   if (now - updates_send_time >= UPDATES_INTERVAL) {
     send_updates();
     updates_send_time = now;
   }
+  */
 
   // Handle IR recv
   if (irrecv.decode(&ir_ticks)) {
@@ -122,6 +130,7 @@ bool temperatureHandler(const HomieRange& range, const String& value) {
   }
   ac.temperature = temp;
   ac.SendElectra(false);
+  send_updates();
   return true;
 }
 
@@ -140,6 +149,7 @@ bool modeHandler(const HomieRange& range, const String& value) {
     return false;
   }
   ac.SendElectra(false);
+  send_updates();
   return true;
 }
 
@@ -156,6 +166,7 @@ bool fanHandler(const HomieRange& range, const String& value) {
     return false;
   }
   ac.SendElectra(false);
+  send_updates();
   return true;
 }
 
@@ -168,6 +179,7 @@ bool ifeelHandler(const HomieRange& range, const String& value) {
     return false;
   }
   ac.SendElectra(false);
+  send_updates();
   return true;
 }
 
@@ -177,6 +189,7 @@ bool ifeelTempHandler(const HomieRange& range, const String& value) {
     return false;
   }
   ac.ifeel_temperature = temp;
+  send_updates();
   return true;
 }
 
@@ -191,6 +204,7 @@ bool powerHandler(const HomieRange& range, const String& value) {
   ac.SendElectra(false);
   ac.power_real = ac.power_setting;
   powerNode.setProperty("state").send(ac.power_real ? "on": "off");
+  send_updates();
   return true;
 }
 
@@ -258,6 +272,7 @@ bool jsonHandler(const HomieRange& range, const String& value) {
   ac.SendElectra(false);
   ac.power_real = ac.power_setting;
 
+  send_updates();
   return true;
 }
 
