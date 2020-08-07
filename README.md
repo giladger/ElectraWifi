@@ -55,7 +55,9 @@ Monitoring and getting the real state of the AC is also possible by subscribing 
 - .../ifeel/state
 
 ### Home Assistant
+
 Home Assistant's MQTT HVAC component can be used with the following configuration:
+
 ```yaml
 climate:
   - platform: mqtt
@@ -83,6 +85,94 @@ climate:
     fan_mode_state_topic: "devices/AC/fan/state"
 ```
 
+It's possible to activate the iFeel by using the build-in swing topic for the MQTT HVAC component by adding the following lines:
+
+```yaml
+climate:
+    ...
+    swing_modes:
+      - "on"
+      - "off"
+    ...
+    swing_mode_command_topic: "devices/AC/ifeel/state/set"
+    swing_mode_state_topic: "devices/AC/ifeel/state"
+```
+
+### Home Assistant - Lovelace UI
+
+Lovelace UI example:
+
+![Lovelace UI Example](images/lovelace.PNG)
+
+Home Assistant's MQTT HVAC component can be used with the following configuration (note the use if simple-thermostat custom component):
+
+```yaml
+cards:
+  - type: custom:simple-thermostat
+    entity: climate.ac
+    name: false
+    step_size: 1
+    control:
+      _headings: false
+      hvac:
+        'off':
+          icon: mdi:power
+          name: 'כבוי'
+        cool:
+          icon: mdi:snowflake
+          name: 'קור'
+        heat:
+          icon: mdi:fire
+          name: 'חימום'
+        dry: false
+      fan:
+        'low':
+          icon: mdi:network-strength-1
+          name: 'נמוך'
+        'med':
+          icon: mdi:network-strength-3
+          name: 'בינוני'
+        'high':
+          icon: mdi:network-strength-4
+          name: 'גבוהה'
+        'Auto':
+          icon: mdi:autorenew
+          name: 'אוטו'
+      swing:
+        'on':
+          icon: mdi:home-thermometer
+          name: 'iFeel פעיל'
+        'off':
+          icon: mdi:home-thermometer-outline
+          name: 'iFeel כבוי'
+    sensors:
+      - entity: sensor.<external-hunidity-sensor>
+        name: 'לחות'
+      - entity: sensor.<external-temperature-sensor>
+        name: 'טמפרטורה'
+    hide:
+      mode: false
+      temperature: true
+```
+
+### Home Assistant - iFeel update based to external sensor
+
+To Inject external temperature (from any tempureture sensor) to iFeel every minute, add the following automation:
+
+```yaml
+automation:
+  - alias: Update ifeel temperature
+    initial_state: 'on'
+    trigger:
+      platform: time_pattern
+      minutes: "/1"
+    action:
+      service: mqtt.publish
+      data:
+        topic: "homie/<homie-id>/ifeel_temperature/state/set"
+        payload_template: "{{ states.sensor.<my-tempereture-sensor>.state }}"
+```
 
 ### Credits
+
 Many thanks to @barakwei and [IRelectra](https://github.com/barakwei/IRelectra) for analyzing the IR protocol.
