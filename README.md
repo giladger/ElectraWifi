@@ -54,6 +54,35 @@ Monitoring and getting the real state of the AC is also possible by subscribing 
 - .../temperature/state
 - .../ifeel/state
 
+### Home Assistant
+Home Assistant's MQTT HVAC component can be used with the following configuration:
+```yaml
+climate:
+  - platform: mqtt
+    name: AC
+    modes:
+      - "heat"
+      - "cool"
+      - "dry"
+      - "off"
+    fan_modes:
+      - "high"
+      - "med"
+      - "low"
+      - "auto"
+    min_temp: 16
+    max_temp: 30
+    power_command_topic: "devices/AC/power/state/set"
+    payload_on: "on"
+    payload_off: "off"
+    mode_command_topic: "devices/AC/mode/state/set"
+    mode_state_topic: "devices/AC/mode/state"
+    temperature_command_topic: "devices/AC/temperature/state/set"
+    temperature_state_topic: "devices/AC/temperature/state"
+    fan_mode_command_topic: "devices/AC/fan/state/set"
+    fan_mode_state_topic: "devices/AC/fan/state"
+```
+
 
 ### Credits
 Many thanks to @barakwei and [IRelectra](https://github.com/barakwei/IRelectra) for analyzing the IR protocol.
