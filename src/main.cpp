@@ -47,6 +47,8 @@ void send_updates() {
     fan = "med";
   } else if (ac.fan == FAN_HIGH) {
     fan = "high";
+  } else if (ac.fan == FAN_AUTO) {
+    fan = "auto";
   } 
   
   ac.power_real = ac.power_setting;
