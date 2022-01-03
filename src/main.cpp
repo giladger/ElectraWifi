@@ -11,6 +11,7 @@
 HomieNode temperatureNode("temperature", "temperature");
 HomieNode modeNode("mode", "mode");
 HomieNode fanNode("fan", "fan");
+HomieNode swingNode("swing", "swing");
 HomieNode ifeelNode("ifeel", "ifeel");
 HomieNode ifeelTempNode("ifeel_temperature", "ifeel_temperature");
 HomieNode powerNode("power", "power");
@@ -19,15 +20,15 @@ HomieNode stateNode("state", "state");
 const uint8_t POWER_PIN = 5;
 const uint8_t IR_PIN = 4;
 const uint8_t IR_RECV_PIN = 14;
-const uint8_t GREEN_LED_PIN = 12;
-const uint8_t RED_LED_PIN = 15;
+//const uint8_t GREEN_LED_PIN = 12;
+//const uint8_t RED_LED_PIN = 15;
 
 const uint8_t kTimeout = 10;
 const uint16_t kCaptureBufferSize = 300;
 
 WiFiUDP udpClient;
 IRelectra ac(IR_PIN);
-IRrecv irrecv(IR_RECV_PIN, kCaptureBufferSize, kTimeout, true);
+//IRrecv irrecv(IR_RECV_PIN, kCaptureBufferSize, kTimeout, true);
 
 decode_results ir_ticks;
 
@@ -40,7 +41,7 @@ ulong updates_send_time = 0;
 
 
 void send_updates() {
-  String fan, mode;
+  String fan, mode, swing;
   if (ac.fan == FAN_LOW) {
     fan = "low";
   } else if (ac.fan == FAN_MED) {
@@ -67,9 +68,21 @@ void send_updates() {
   else {
     mode = "off";
   }
+
+  if (ac.swing == SWING_ON && ac.swing_h == SWING_H_ON) {
+    swing = "both";
+  } else if (ac.swing == SWING_ON && ac.swing_h == SWING_H_OFF) {
+    swing = "on";
+  } else if (ac.swing == SWING_OFF && ac.swing_h == SWING_H_ON) {
+    swing = "hor";
+  } else {
+    swing = "off";
+  }
+
   powerNode.setProperty("state").send(ac.power_real ? "on": "off");
   fanNode.setProperty("state").send(fan);
   modeNode.setProperty("state").send(mode);
+  swingNode.setProperty("state").send(swing);
   temperatureNode.setProperty("state").send(String(ac.temperature));
   ifeelNode.setProperty("state").send(ac.ifeel == IFEEL_ON ? "on" : "off");
 }
@@ -79,7 +92,7 @@ void loopHandler() {
 
   // Set power led and update the power state after it's stable for a while
   uint power_state = !digitalRead(POWER_PIN);
-  digitalWrite(GREEN_LED_PIN, power_state);
+  //digitalWrite(GREEN_LED_PIN, power_state);
   if (power_state != ac.power_real) {
     if (power_change_time) {
       if (now - power_change_time > POWER_DEBOUNCE) {
@@ -112,22 +125,22 @@ void loopHandler() {
   */
 
   // Handle IR recv
-  if (irrecv.decode(&ir_ticks)) {
-    uint64_t code = 0;
-    code = DecodeElectraIR(ir_ticks);
-    irrecv.resume();
-    if (code) {
-      ac.UpdateFromIR(code);
-      ac.SendElectra(false);
-      send_updates();
-    }
-  }
+  // if (irrecv.decode(&ir_ticks)) {
+  //   uint64_t code = 0;
+  //   code = DecodeElectraIR(ir_ticks);
+  //   irrecv.resume();
+  //   if (code) {
+  //     ac.UpdateFromIR(code);
+  //     ac.SendElectra(false);
+  //     send_updates();
+  //   }
+  // }
 }
 
 
 bool temperatureHandler(const HomieRange& range, const String& value) {
   uint8_t temp = value.toInt();
-  if (temp < 15 || temp > 30) { // ifeel temp has only 4 bits where 15 == 0b0000 and 30 == 0b1111
+  if (temp < 15 || temp > 30) { // setpoint temp has only 4 bits where 15 == 0b0000 and 30 == 0b1111
     return false;
   }
   ac.temperature = temp;
@@ -195,6 +208,25 @@ bool ifeelTempHandler(const HomieRange& range, const String& value) {
   return true;
 }
 
+bool swingHandler(const HomieRange& range, const String& value) {
+  if (value == "on") {
+    ac.swing = SWING_ON;
+    ac.swing_h = SWING_H_OFF;
+  } else if (value == "both") {
+    ac.swing = SWING_ON;
+    ac.swing_h = SWING_H_ON;
+  } else if (value == "hor") {
+    ac.swing = SWING_OFF;
+    ac.swing_h = SWING_H_ON;
+  }  else {
+    ac.swing = SWING_OFF;
+    ac.swing_h = SWING_H_OFF;
+  }
+  ac.SendElectra(false);
+  send_updates();
+  return true;
+}
+
 bool powerHandler(const HomieRange& range, const String& value) {
   if (value == "on") {
     ac.power_setting = true;
@@ -222,6 +254,7 @@ bool jsonHandler(const HomieRange& range, const String& value) {
   String power = parsed["power"];
   String ifeel = parsed["ifeel"];
   String temp_str = parsed["temperature"];
+  String swing = parsed["swing"];
   uint8_t temp = temp_str.toInt();
 
   if (mode == "cool") {
@@ -258,6 +291,22 @@ bool jsonHandler(const HomieRange& range, const String& value) {
     return false;
   }
 
+  if (swing == "on") {
+    ac.swing = SWING_ON;
+    ac.swing_h = SWING_H_OFF;
+  } else if (swing == "both") {
+    ac.swing = SWING_ON;
+    ac.swing_h = SWING_H_ON;
+  } else if (swing == "hor") {
+    ac.swing = SWING_OFF;
+    ac.swing_h = SWING_H_ON;
+  }  else if (swing == "off") {
+    ac.swing = SWING_OFF;
+    ac.swing_h = SWING_H_OFF;
+  } else {
+    return false;
+  }
+
   if (ifeel == "on") {
     ac.ifeel = IFEEL_ON;
   } else if (ifeel == "off") {
@@ -266,7 +315,7 @@ bool jsonHandler(const HomieRange& range, const String& value) {
     return false;
   }
 
-  if (temp < 15 || temp > 30) { // ifeel temp has only 4 bits where 15 == 0b0000 and 30 == 0b1111
+  if (temp < 15 || temp > 30) { // setpoint temp has only 4 bits where 15 == 0b0000 and 30 == 0b1111
     return false;
   }
   ac.temperature = temp;
@@ -289,13 +338,14 @@ void setup() {
   ifeelNode.advertise("state").settable(ifeelHandler);
   ifeelTempNode.advertise("state").settable(ifeelTempHandler);
   powerNode.advertise("state").settable(powerHandler);
+  swingNode.advertise("state").settable(swingHandler);
   stateNode.advertise("json").settable(jsonHandler);
   
   pinMode(POWER_PIN, INPUT_PULLUP);
-  pinMode(GREEN_LED_PIN, OUTPUT);
-  Homie.setLedPin(RED_LED_PIN, HIGH);
-  irrecv.setUnknownThreshold(100); 
-  irrecv.enableIRIn();
+  //pinMode(GREEN_LED_PIN, OUTPUT);
+  //Homie.setLedPin(RED_LED_PIN, HIGH);
+  //irrecv.setUnknownThreshold(100); 
+  //irrecv.enableIRIn();
   Homie.setup();
 }
 
