@@ -20,6 +20,7 @@ IRelectra::IRelectra(uint8_t output_pin) : output_pin(output_pin)
     mode = MODE_COOL;
     fan = FAN_LOW;
     temperature = 26;
+    swing_h = SWING_H_OFF;
     swing = SWING_OFF;
     sleep = SLEEP_OFF;
     ifeel_temperature = 0;
@@ -114,7 +115,7 @@ void IRelectra::SendRaw(unsigned int *data, uint size) {
 // 32-30: Mode - Cool, heat etc.
 // 29-28: Fan - Low, medium etc.
 //    27: Temperature notification (used in I Feel)
-//    26: Zero
+//    26: Horizontal Swing On/Off
 //    25: Swing On/Off
 //    24: Set I Feel
 // 23-19: Temperature, 4 bits for set (where 15 is 00000, 30 is 01111), 5 bits for notify
@@ -142,6 +143,7 @@ uint64_t IRelectra::EncodeElectra(bool notify) {
     code |= (((uint64_t)mode      & 7)  << 30);
     code |= (((uint64_t)fan       & 3)  << 28);
     code |= (((uint64_t)notify    & 1)  << 27);
+    code |= (((uint64_t)swing_h   & 1)  << 26);
     code |= (((uint64_t)swing     & 1)  << 25);
     code |= (((uint64_t)ifeel     & 1)  << 24);
     code |= (((uint64_t)send_temp & 31) << 19);
@@ -156,14 +158,15 @@ void IRelectra::UpdateFromIR(uint64_t code) {
     power_t power;
     bool notify;
 
-    power = (power_t)((code >> 33) & 1);
-    mode = (ac_mode_t)((code >> 30) & 7);
-    fan = (fan_t)((code >> 28) & 3);
-    notify = (bool)((code >> 27) & 1);
-    swing = (swing_t)((code >> 25) & 1);
-    ifeel = (ifeel_t)((code >> 24) & 1);
-    send_temp = (ifeel_t)((code >> 19) & 31);
-    sleep = (sleep_t)((code >> 18) & 1);
+    power =     (power_t)  ((code >> 33) & 1);
+    mode =      (ac_mode_t)((code >> 30) & 7);
+    fan =       (fan_t)    ((code >> 28) & 3);
+    notify =    (bool)     ((code >> 27) & 1);
+    swing_h =   (swing_h_t)((code >> 26) & 1);
+    swing =     (swing_t)  ((code >> 25) & 1);
+    ifeel =     (ifeel_t)  ((code >> 24) & 1);
+    send_temp = (ifeel_t)  ((code >> 19) & 31);
+    sleep =     (sleep_t)  ((code >> 18) & 1);
 
     if (power == POWER_TOGGLE) {
         power_setting = !power_real;
