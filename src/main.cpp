@@ -8,18 +8,18 @@
 #include "IRelectra.h"
 
 
-HomieNode temperatureNode("temperature", "temperature");
-HomieNode modeNode("mode", "mode");
-HomieNode fanNode("fan", "fan");
-HomieNode swingNode("swing", "swing");
-HomieNode ifeelNode("ifeel", "ifeel");
-HomieNode ifeelTempNode("ifeel_temperature", "ifeel_temperature");
-HomieNode powerNode("power", "power");
-HomieNode stateNode("state", "state");
+HomieNode temperatureNode("temperature", "temperature","temperature");
+HomieNode modeNode("mode", "mode","mode");
+HomieNode fanNode("fan", "fan","fan");
+HomieNode swingNode("swing", "swing","swing");
+HomieNode ifeelNode("ifeel", "ifeel","ifeel");
+HomieNode ifeelTempNode("ifeel_temperature", "ifeel_temperature","ifeel_temperature");
+HomieNode powerNode("power", "power","power");
+HomieNode stateNode("state", "state","state");
 
-const uint8_t POWER_PIN = 5;
-const uint8_t IR_PIN = 4;
-const uint8_t IR_RECV_PIN = 14;
+const uint8_t POWER_PIN = 1;
+const uint8_t IR_PIN = 3;
+//const uint8_t IR_RECV_PIN = 14;
 //const uint8_t GREEN_LED_PIN = 12;
 //const uint8_t RED_LED_PIN = 15;
 
@@ -243,9 +243,9 @@ bool powerHandler(const HomieRange& range, const String& value) {
 }
 
 bool jsonHandler(const HomieRange& range, const String& value) {
-  StaticJsonBuffer<200> json_buffer;
-  JsonObject& parsed = json_buffer.parseObject(value);
-  if (!parsed.success()) {
+  StaticJsonDocument<200> parsed;
+  auto error = deserializeJson(parsed,value);
+  if (error) {
     return false;
   }
 
@@ -328,8 +328,10 @@ bool jsonHandler(const HomieRange& range, const String& value) {
 }
 
 void setup() {
-  Serial.begin(115200);
-  Serial << endl << endl;
+  //Serial.begin(115200);
+  //Serial << endl << endl;
+  Homie.disableLogging();
+  Homie.disableLedFeedback();
   Homie_setFirmware("ElectraWifi", "1.0.0");
   Homie.setLoopFunction(loopHandler);
   temperatureNode.advertise("state").settable(temperatureHandler);
