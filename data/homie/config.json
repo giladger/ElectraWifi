@@ -1,0 +1,20 @@
+{
+    "name": "Electra AC living",
+    "device_id": "ac-living",
+    "device_stats_interval": 60,
+    "wifi": {
+      "ssid": "garci",
+      "password": "familiagarciadelrio"
+    },
+    "mqtt": {
+      "host": "192.168.1.170",
+      "port": 1883,
+      "base_topic": "devices/",
+      "auth": true,
+      "username": "mqtt",
+      "password": "mqtt"
+    },
+    "ota": {
+      "enabled": true
+    }
+  }
