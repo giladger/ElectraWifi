@@ -43,7 +43,7 @@ Once the code is installed on the esp, it will boot in configuration mode. Follo
 After the esp is configured, it will subscribe to the following MQTT topics:
 - .../state/json/set 
   - This topic accepts a json in the following format (all fields are mandatory), updates the state and send it to the AC unit:   
-  `{"power": "on|off", "mode": "cool|heat|fan|dry|auto", "fan": "low|med|high|auto", "temperature": 15..30, "ifeel": "on|off"}`
+  `{"power": "on|off", "mode": "cool|heat|fan|dry|auto", "fan": "low|med|high|auto", "temperature": 15..30, "ifeel": "on|off", "swing":"on|off|hor|both"}`
 - .../ifeel_temperature/state/set
   - This topic accepts a number between 5 and 36 and sends it to the main unit as a temperature received by the "i feel" function of the remote.
   
@@ -53,6 +53,7 @@ Monitoring and getting the real state of the AC is also possible by subscribing 
 - .../fan/state
 - .../temperature/state
 - .../ifeel/state
+- .../swing/state
 
 ### Home Assistant
 
@@ -61,7 +62,7 @@ Home Assistant's MQTT HVAC component can be used with the following configuratio
 ```yaml
 climate:
   - platform: mqtt
-    name: AC
+    name: ac-living
     modes:
       - "heat"
       - "cool"
@@ -72,30 +73,35 @@ climate:
       - "med"
       - "low"
       - "auto"
+    swing_modes:
+      - "off"
+      - "on"
+      - "hor"
+      - "both"
     min_temp: 16
     max_temp: 30
-    power_command_topic: "devices/AC/power/state/set"
+    power_command_topic: "devices/ac-living/power/state/set"
     payload_on: "on"
     payload_off: "off"
-    mode_command_topic: "devices/AC/mode/state/set"
-    mode_state_topic: "devices/AC/mode/state"
-    temperature_command_topic: "devices/AC/temperature/state/set"
-    temperature_state_topic: "devices/AC/temperature/state"
-    fan_mode_command_topic: "devices/AC/fan/state/set"
-    fan_mode_state_topic: "devices/AC/fan/state"
+    mode_command_topic: "devices/ac-living/mode/state/set"
+    mode_state_topic: "devices/ac-living/mode/state"
+    temperature_command_topic: "devices/ac-living/temperature/state/set"
+    temperature_state_topic: "devices/ac-living/temperature/state"
+    fan_mode_command_topic: "devices/ac-living/fan/state/set"
+    fan_mode_state_topic: "devices/ac-living/fan/state"
+    swing_mode_command_topic: "devices/ac-libing/swing/state/set"
+    swing_mode_state_topic: "devices/ac-libing/swing/state"
 ```
 
-It's possible to activate the iFeel by using the build-in swing topic for the MQTT HVAC component by adding the following lines:
+It's possible to activate the iFeel by using the build-in aux-heat or away_mode topic for the MQTT HVAC component by adding the following lines:
+Its not ideal as it will show "Preset: Home/Away" but it works fine.
 
 ```yaml
 climate:
     ...
-    swing_modes:
-      - "on"
-      - "off"
     ...
-    swing_mode_command_topic: "devices/AC/ifeel/state/set"
-    swing_mode_state_topic: "devices/AC/ifeel/state"
+    away_mode_command_topic: "devices/AC/ifeel/state/set"
+    away_mode_state_topic: "devices/AC/ifeel/state"
 ```
 
 ### Home Assistant - Lovelace UI
