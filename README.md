@@ -97,7 +97,7 @@ Home Assistant's MQTT HVAC component can be used with the following configuratio
 ```yaml
 climate:
   - platform: mqtt
-    name: ac-living
+    name: AC
     modes:
       - "heat"
       - "cool"
@@ -115,17 +115,17 @@ climate:
       - "both"
     min_temp: 16
     max_temp: 30
-    power_command_topic: "devices/ac-living/power/state/set"
+    power_command_topic: "devices/AC/power/state/set"
     payload_on: "on"
     payload_off: "off"
-    mode_command_topic: "devices/ac-living/mode/state/set"
-    mode_state_topic: "devices/ac-living/mode/state"
-    temperature_command_topic: "devices/ac-living/temperature/state/set"
-    temperature_state_topic: "devices/ac-living/temperature/state"
-    fan_mode_command_topic: "devices/ac-living/fan/state/set"
-    fan_mode_state_topic: "devices/ac-living/fan/state"
-    swing_mode_command_topic: "devices/ac-libing/swing/state/set"
-    swing_mode_state_topic: "devices/ac-libing/swing/state"
+    mode_command_topic: "devices/AC/mode/state/set"
+    mode_state_topic: "devices/AC/mode/state"
+    temperature_command_topic: "devices/AC/temperature/state/set"
+    temperature_state_topic: "devices/AC/temperature/state"
+    fan_mode_command_topic: "devices/AC/fan/state/set"
+    fan_mode_state_topic: "devices/AC/fan/state"
+    swing_mode_command_topic: "devices/AC/swing/state/set"
+    swing_mode_state_topic: "devices/AC/swing/state"
 ```
 
 It's possible to activate the iFeel by using the build-in aux-heat or away_mode topic for the MQTT HVAC component by adding the following lines:
