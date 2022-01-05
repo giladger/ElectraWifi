@@ -17,8 +17,8 @@ HomieNode ifeelTempNode("ifeel_temperature", "ifeel_temperature","ifeel_temperat
 HomieNode powerNode("power", "power","power");
 HomieNode stateNode("state", "state","state");
 
-const uint8_t POWER_PIN = 1;
-const uint8_t IR_PIN = 3;
+const uint8_t POWER_PIN = 2;
+const uint8_t IR_PIN = 0;
 //const uint8_t IR_RECV_PIN = 14;
 //const uint8_t GREEN_LED_PIN = 12;
 //const uint8_t RED_LED_PIN = 15;
@@ -78,7 +78,8 @@ void send_updates() {
   } else {
     swing = "off";
   }
-
+  //Serial << "AC swing: " << (ac.swing ? "on": "off") << "|" << (ac.swing_h  ? "on": "off") <<endl;
+  //Serial << "Send Update swing: " << swing << endl;
   powerNode.setProperty("state").send(ac.power_real ? "on": "off");
   fanNode.setProperty("state").send(fan);
   modeNode.setProperty("state").send(mode);
@@ -209,6 +210,7 @@ bool ifeelTempHandler(const HomieRange& range, const String& value) {
 }
 
 bool swingHandler(const HomieRange& range, const String& value) {
+  //Serial << "Swing Handler value: " << value << endl;
   if (value == "on") {
     ac.swing = SWING_ON;
     ac.swing_h = SWING_H_OFF;
@@ -218,9 +220,11 @@ bool swingHandler(const HomieRange& range, const String& value) {
   } else if (value == "hor") {
     ac.swing = SWING_OFF;
     ac.swing_h = SWING_H_ON;
-  }  else {
+  }  else if (value == "off"){
     ac.swing = SWING_OFF;
     ac.swing_h = SWING_H_OFF;
+  } else {
+    return false;
   }
   ac.SendElectra(false);
   send_updates();
@@ -328,9 +332,9 @@ bool jsonHandler(const HomieRange& range, const String& value) {
 }
 
 void setup() {
-  //Serial.begin(115200);
-  //Serial << endl << endl;
-  Homie.disableLogging();
+  Serial.begin(115200);
+  Serial << endl << endl;
+  //Homie.disableLogging();
   Homie.disableLedFeedback();
   Homie_setFirmware("ElectraWifi", "1.0.0");
   Homie.setLoopFunction(loopHandler);
