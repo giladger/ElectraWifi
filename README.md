@@ -39,6 +39,41 @@ Please follow the instructions there to install all the dependencies.
 
 Once the code is installed on the esp, it will boot in configuration mode. Follow the instructions [here](https://homieiot.github.io/homie-esp8266/docs/2.0.0/configuration/json-configuration-file/) to upload a JSON configuration file.
 
+### Building
+Building with platform.io is quite simple. But Homie is not compatible with Platform.io 3.0 for ESP8266 out of the box. You need to change two files in the Homie library.
+- Start building as usual. You will see some errors regarding the "HTTPClient" calls not being supported.
+- Navigate to the ./pio/libdeps/<target>/Homie/src/Homie/Boot
+- Edit the `BootConfig.hpp` and `BootConfig.cpp` files as follows:
+
+- BootConfig.hpp
+Add the following line:
+```
+  WiFiClient _wifiClient;
+```
+So that the file looks as follows:
+```
+ private:
+  AsyncWebServer _http;
+  WiFiClient _wifiClient;
+  HTTPClient _httpClient;
+  DNSServer _dns;
+```
+
+- BootConfig.cpp
+Replace the following line:
+```
+  _httpClient.begin(url);
+```
+so that it looks as follows:
+```
+  // send request to destination (as in incoming host header)
+  _httpClient.setUserAgent(F("ESP8266-Homie"));
+  _httpClient.begin(_wifiClient,url);
+  // copy headers
+```
+
+
+
 ## Usage
 After the esp is configured, it will subscribe to the following MQTT topics:
 - .../state/json/set 
