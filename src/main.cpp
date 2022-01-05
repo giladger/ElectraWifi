@@ -17,18 +17,18 @@ HomieNode ifeelTempNode("ifeel_temperature", "ifeel_temperature","ifeel_temperat
 HomieNode powerNode("power", "power","power");
 HomieNode stateNode("state", "state","state");
 
-const uint8_t POWER_PIN = 2;
-const uint8_t IR_PIN = 0;
-//const uint8_t IR_RECV_PIN = 14;
-//const uint8_t GREEN_LED_PIN = 12;
-//const uint8_t RED_LED_PIN = 15;
+const uint8_t POWER_PIN = 5;
+const uint8_t IR_PIN = 4;
+const uint8_t IR_RECV_PIN = 14;
+const uint8_t GREEN_LED_PIN = 12;
+const uint8_t RED_LED_PIN = 15;
 
 const uint8_t kTimeout = 10;
 const uint16_t kCaptureBufferSize = 300;
 
 WiFiUDP udpClient;
 IRelectra ac(IR_PIN);
-//IRrecv irrecv(IR_RECV_PIN, kCaptureBufferSize, kTimeout, true);
+IRrecv irrecv(IR_RECV_PIN, kCaptureBufferSize, kTimeout, true);
 
 decode_results ir_ticks;
 
@@ -93,7 +93,7 @@ void loopHandler() {
 
   // Set power led and update the power state after it's stable for a while
   uint power_state = !digitalRead(POWER_PIN);
-  //digitalWrite(GREEN_LED_PIN, power_state);
+  digitalWrite(GREEN_LED_PIN, power_state);
   if (power_state != ac.power_real) {
     if (power_change_time) {
       if (now - power_change_time > POWER_DEBOUNCE) {
@@ -126,16 +126,16 @@ void loopHandler() {
   */
 
   // Handle IR recv
-  // if (irrecv.decode(&ir_ticks)) {
-  //   uint64_t code = 0;
-  //   code = DecodeElectraIR(ir_ticks);
-  //   irrecv.resume();
-  //   if (code) {
-  //     ac.UpdateFromIR(code);
-  //     ac.SendElectra(false);
-  //     send_updates();
-  //   }
-  // }
+  if (irrecv.decode(&ir_ticks)) {
+    uint64_t code = 0;
+    code = DecodeElectraIR(ir_ticks);
+    irrecv.resume();
+    if (code) {
+      ac.UpdateFromIR(code);
+      ac.SendElectra(false);
+      send_updates();
+    }
+  }
 }
 
 
@@ -335,7 +335,7 @@ void setup() {
   Serial.begin(115200);
   Serial << endl << endl;
   //Homie.disableLogging();
-  Homie.disableLedFeedback();
+  //Homie.disableLedFeedback();
   Homie_setFirmware("ElectraWifi", "1.0.0");
   Homie.setLoopFunction(loopHandler);
   temperatureNode.advertise("state").settable(temperatureHandler);
@@ -348,10 +348,10 @@ void setup() {
   stateNode.advertise("json").settable(jsonHandler);
   
   pinMode(POWER_PIN, INPUT_PULLUP);
-  //pinMode(GREEN_LED_PIN, OUTPUT);
-  //Homie.setLedPin(RED_LED_PIN, HIGH);
-  //irrecv.setUnknownThreshold(100); 
-  //irrecv.enableIRIn();
+  pinMode(GREEN_LED_PIN, OUTPUT);
+  Homie.setLedPin(RED_LED_PIN, HIGH);
+  irrecv.setUnknownThreshold(100); 
+  irrecv.enableIRIn();
   Homie.setup();
 }
 
