@@ -103,7 +103,9 @@ void loopHandler() {
 
   // Set power led and update the power state after it's stable for a while
   uint power_state = !digitalRead(POWER_PIN);
+#ifndef ARDUINO_ESP8266_ESP01
   digitalWrite(GREEN_LED_PIN, power_state);
+#endif
   if (power_state != ac.power_real) {
     if (power_change_time) {
       if (now - power_change_time > POWER_DEBOUNCE) {

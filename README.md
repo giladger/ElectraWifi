@@ -39,6 +39,8 @@ Please follow the instructions there to install all the dependencies.
 
 Once the code is installed on the esp, it will boot in configuration mode. Follow the instructions [here](https://homieiot.github.io/homie-esp8266/docs/2.0.0/configuration/json-configuration-file/) to upload a JSON configuration file.
 
+A sample json config file is provided under `/data/homie/config.json`. This file can be edited and uploaded using platform.io under "Platform -> Build Filesystem Image" and the "Platform -> Upload Filesystem Image". Make sure to properly edit the file before uploading.
+
 ### Building
 Building with platform.io is quite simple. But Homie is not compatible with Platform.io 3.0 for ESP8266 out of the box. You need to change two files in the Homie library.
 - Start building as usual. You will see some errors regarding the "HTTPClient" calls not being supported.
