@@ -17,20 +17,30 @@ HomieNode ifeelTempNode("ifeel_temperature", "ifeel_temperature","ifeel_temperat
 HomieNode powerNode("power", "power","power");
 HomieNode stateNode("state", "state","state");
 
+#ifdef ARDUINO_ESP8266_ESP01
+const uint8_t POWER_PIN = 2;
+const uint8_t IR_PIN = 0;
+#else
 const uint8_t POWER_PIN = 5;
 const uint8_t IR_PIN = 4;
-const uint8_t IR_RECV_PIN = 14;
 const uint8_t GREEN_LED_PIN = 12;
 const uint8_t RED_LED_PIN = 15;
+#endif
+
+#ifndef ELECTRAWIFI_NO_IR_RCV
+const uint8_t IR_RECV_PIN = 14;
+#endif
 
 const uint8_t kTimeout = 10;
 const uint16_t kCaptureBufferSize = 300;
 
 WiFiUDP udpClient;
 IRelectra ac(IR_PIN);
-IRrecv irrecv(IR_RECV_PIN, kCaptureBufferSize, kTimeout, true);
 
+#ifndef ELECTRAWIFI_NO_IR_RCV
+IRrecv irrecv(IR_RECV_PIN, kCaptureBufferSize, kTimeout, true);
 decode_results ir_ticks;
+#endif
 
 const int IFEEL_INTERVAL = 2 * 60000; // 2 min
 const int POWER_DEBOUNCE = 2000; // 2 sec
@@ -126,6 +136,7 @@ void loopHandler() {
   */
 
   // Handle IR recv
+#ifndef ELECTRAWIFI_NO_IR_RCV
   if (irrecv.decode(&ir_ticks)) {
     uint64_t code = 0;
     code = DecodeElectraIR(ir_ticks);
@@ -136,6 +147,7 @@ void loopHandler() {
       send_updates();
     }
   }
+#endif
 }
 
 
@@ -335,7 +347,9 @@ void setup() {
   Serial.begin(115200);
   Serial << endl << endl;
   //Homie.disableLogging();
-  //Homie.disableLedFeedback();
+#ifdef ARDUINO_ESP8266_ESP01
+  Homie.disableLedFeedback();
+#endif
   Homie_setFirmware("ElectraWifi", "1.0.0");
   Homie.setLoopFunction(loopHandler);
   temperatureNode.advertise("state").settable(temperatureHandler);
@@ -348,10 +362,14 @@ void setup() {
   stateNode.advertise("json").settable(jsonHandler);
   
   pinMode(POWER_PIN, INPUT_PULLUP);
+#ifndef ARDUINO_ESP8266_ESP01
   pinMode(GREEN_LED_PIN, OUTPUT);
   Homie.setLedPin(RED_LED_PIN, HIGH);
+#endif
+#ifndef ELECTRAWIFI_NO_IR_RCV
   irrecv.setUnknownThreshold(100); 
   irrecv.enableIRIn();
+#endif
   Homie.setup();
 }
 
