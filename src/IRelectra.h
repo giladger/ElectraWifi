@@ -41,6 +41,12 @@ enum swing_t
     SWING_ON = 1
 };
 
+enum swing_h_t
+{
+    SWING_H_OFF = 0,
+    SWING_H_ON = 1
+};
+
 enum sleep_t
 {
     SLEEP_OFF = 0,
@@ -71,6 +77,7 @@ public:
     fan_t fan;
     uint8_t temperature;
     swing_t swing;
+    swing_h_t swing_h;
     sleep_t sleep;
     uint8_t ifeel_temperature;
     ifeel_t ifeel;

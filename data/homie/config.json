@@ -1,0 +1,20 @@
+{
+    "name": "Electra AC",
+    "device_id": "AC",
+    "device_stats_interval": 60,
+    "wifi": {
+      "ssid": "<wifi SSID>",
+      "password": "<WIFI PASSWORD IF NEEDED>"
+    },
+    "mqtt": {
+      "host": "<MQTT IP OR DNS NAME>",
+      "port": 1883,
+      "base_topic": "devices/",
+      "auth": true,
+      "username": "<MQTT_USERNAME>",
+      "password": "<MQTT_PASSWORD>"
+    },
+    "ota": {
+      "enabled": true
+    }
+  }
